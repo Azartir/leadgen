@@ -157,6 +157,7 @@ def run_pipeline(vertical: Vertical, market: str, *,
                     bbox, limit=limit, log=log,
                     queries=cfg.get("yandex_queries"),
                     api_key=cfg.get("yandex_api_key"),
+                    allow_processing=bool(cfg.get("yandex_allow_processing")),
                 )
             except Exception as e:
                 log(f"  Яндекс Карты failed: {e}")
