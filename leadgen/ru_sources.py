@@ -147,7 +147,7 @@ def dgis_collect(bbox, *, limit=None, log=print, queries=None, api_key=None):
     return out[:limit] if limit else out
 
 
-def yandex_collect(bbox, *, limit=None, log=print, queries=None, api_key=None):
+def yandex_collect(bbox, *, limit=None, log=print, queries=None, api_key=None, allow_processing=False):
     """Optional Yandex Maps organization search; explicit license gate required.
 
     Yandex's organization-search terms can prohibit saving or modifying response
@@ -158,7 +158,7 @@ def yandex_collect(bbox, *, limit=None, log=print, queries=None, api_key=None):
     if not key:
         log("  Яндекс Карты: ключ не задан — пропускаю источник.")
         return []
-    if os.getenv("YANDEX_MAPS_ALLOW_PROCESSING") != "1":
+    if not allow_processing and os.getenv("YANDEX_MAPS_ALLOW_PROCESSING") != "1":
         log("  Яндекс Карты: поиск отключён. Проверьте лицензию; для разрешённой обработки задайте YANDEX_MAPS_ALLOW_PROCESSING=1.")
         return []
 
