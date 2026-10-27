@@ -86,7 +86,8 @@ COLUMNS = [
     ("Сфера", "category"), ("Город", "city"), ("Регион", "state"),
     ("Телефон", "phone"), ("Email", "email"), ("Сайт", "website"),
     ("Почему в списке", "why"), ("Первое сообщение", "opener"),
-    ("Адрес", "address"), ("Источник", "source"), ("Все источники", "verified_sources"),
+    ("Адрес", "address"), ("Яндекс Карты", "yandex_maps_url"), ("Поиск в 2ГИС", "dgis_search_url"),
+    ("Источник", "source"), ("Все источники", "verified_sources"),
     ("Источников совпало", "source_match_count"), ("Расхождения", "source_conflicts"),
     ("Ссылка на источник", "source_url"),
 ]
