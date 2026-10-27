@@ -1,9 +1,8 @@
 """
 Geocoding + market resolution.
 
-A "market" can be either a named entry in MARKETS (a bbox tuple) or a free-text
-place name we geocode on the fly via Nominatim. bbox order is (south, west,
-north, east) everywhere in this package.
+A market is either a named bbox tuple or a free-text place geocoded by Nominatim.
+BBox order is (south, west, north, east).
 """
 from __future__ import annotations
 
@@ -13,12 +12,17 @@ from .audit import UA
 
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
 
-# Reusable named markets (south, west, north, east). Grow this list as you expand.
+# Reusable named markets (south, west, north, east). Russian presets are convenient
+# launch points; free-text Russian city names are also accepted by Nominatim.
 MARKETS: dict[str, tuple[float, float, float, float]] = {
     "sonoma_county_ca": (38.05, -123.55, 38.85, -122.35),
     "phoenix_az":       (33.20, -112.40, 33.85, -111.80),
     "tampa_fl":         (27.80, -82.65, 28.20, -82.30),
     "austin_tx":        (30.10, -97.95, 30.52, -97.55),
+    "moscow_ru":        (55.50, 36.80, 56.05, 37.95),
+    "stavropol_ru":     (44.95, 41.85, 45.15, 42.10),
+    "rostov_ru":        (47.12, 39.55, 47.35, 39.90),
+    "krasnodar_ru":     (44.95, 38.85, 45.15, 39.15),
 }
 
 
@@ -48,6 +52,6 @@ def resolve_market(market: str) -> tuple[tuple[float, float, float, float], str]
     if not geo:
         raise ValueError(
             f"could not resolve market '{market}'. Use a key in MARKETS "
-            f"({sorted(MARKETS)}) or a geocodable place like 'Austin, Texas'."
+            f"({sorted(MARKETS)}) or a geocodable place name like 'Ставрополь, Россия'."
         )
     return geo["bbox"], geo["display_name"]
