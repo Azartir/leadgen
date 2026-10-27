@@ -8,7 +8,6 @@ from __future__ import annotations
 import csv
 import json
 from collections.abc import Mapping
-from pathlib import Path
 
 
 def _cell_value(value):
@@ -21,10 +20,6 @@ def _cell_value(value):
     if value is None:
         return ""
     if isinstance(value, (str, int, float, bool)):
-        # Excel interprets strings starting with '=' as formulas. Keep imported
-        # business data as literal text rather than executable spreadsheet formulas.
-        if isinstance(value, str) and value.startswith(("=", "+", "-", "@")):
-            return "'" + value
         return value
     if isinstance(value, Mapping):
         return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
@@ -75,6 +70,9 @@ def write_xlsx(leads: list[dict], columns: list[tuple[str, str]], path: str,
             if isinstance(value, str) and len(value) > 32767:
                 value = value[:32764] + "..."
             c = s.cell(row=ri, column=i, value=value)
+            # Preserve imported strings as text, never as executable formulas.
+            if isinstance(value, str) and value.startswith("="):
+                c.data_type = "s"
             c.font = BODY
             c.alignment = WRAP
         if tier_col and r.get("tier") in TIER_FILL:
