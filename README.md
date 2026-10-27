@@ -1,3 +1,5 @@
+<p align="right"><a href="README_RU.md">Русская версия README</a></p>
+
 <p align="center">
   <img src="docs/img/banner.svg" alt="leadgen — free, no-key local-business lead generation" width="100%">
 </p>
@@ -121,6 +123,8 @@ rest of the pipeline is source-agnostic. Pick any combination with `--sources`:
 | **npi** | every US healthcare provider (dentists/doctors/clinics/pharmacies) from CMS's registry | nothing | public domain |
 | **arcgis** | business-license layers published on ArcGIS (point it at a layer URL) | nothing | per-publisher |
 | **foursquare** | ~100M places w/ website+phone+socials via the open source.coop mirror | `duckdb` | Apache-2.0 |
+| **2gis** | Russian-market organizations via official 2GIS Places API | demo key / subscription | 2GIS terms |
+| **yandex** | Yandex organization search; explicit license gate, not a guaranteed free source | API key + license allowing processing | Yandex terms |
 
 ```bash
 python -m leadgen --vertical web_design --market "Boulder, Colorado" --sources overture osm socrata npi
@@ -233,4 +237,4 @@ A Russian-language B2B profile is available as `ru_b2b`, with Russian pitch draf
     python -m leadgen --vertical ru_b2b --market stavropol_ru --sources osm --out stavropol_b2b
     python -m leadgen --vertical ru_b2b --market "Ростов-на-Дону, Россия" --sources osm --out rostov_b2b
 
-See [`docs/RUSSIAN_PROSPECTING.md`](docs/RUSSIAN_PROSPECTING.md) for scope, scoring, limitations, and the recommended workflow. Current collection uses OSM/Overture; it does not scrape Yandex Maps or 2GIS and does not query Russian company registries.
+See [`docs/RUSSIAN_PROSPECTING.md`](docs/RUSSIAN_PROSPECTING.md) for scope, scoring, limitations, and the recommended workflow. OSM/Overture remain keyless defaults. Optional 2GIS Places API support uses a demo key or subscription; optional Yandex organization search requires a key and explicit confirmation that the current license permits the intended processing. See [README_RU.md](README_RU.md) for setup and the Windows EXE workflow.
