@@ -124,7 +124,7 @@ rest of the pipeline is source-agnostic. Pick any combination with `--sources`:
 | **arcgis** | business-license layers published on ArcGIS (point it at a layer URL) | nothing | per-publisher |
 | **foursquare** | ~100M places w/ website+phone+socials via the open source.coop mirror | `duckdb` | Apache-2.0 |
 | **2gis** | Russian-market organizations via official 2GIS Places API | demo key / subscription | 2GIS terms |
-| **yandex** | Yandex organization search; explicit license gate, not a guaranteed free source | API key + license allowing processing | Yandex terms |
+| **Yandex Maps links** | Direct search links in Russian B2B exports for manual verification; no bulk storage of Yandex API data | nothing | Yandex terms |
 
 ```bash
 python -m leadgen --vertical web_design --market "Boulder, Colorado" --sources overture osm socrata npi
