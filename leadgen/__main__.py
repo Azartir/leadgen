@@ -31,8 +31,8 @@ def main(argv=None) -> int:
     ap.add_argument("--market", help="named market key or a geocodable place name")
     ap.add_argument("--sources", nargs="+", default=None,
                     choices=["overture", "osm", "socrata", "npi", "foursquare",
-                             "arcgis", "2gis", "yandex", "wikidata", "ckan", "localfile", "url_csv"],
-                    help="источники: overture/osm (карты), 2gis (демо-ключ), yandex (ключ и разрешённая лицензией обработка), socrata/arcgis/ckan "
+                             "arcgis", "2gis", "wikidata", "ckan", "localfile", "url_csv"],
+                    help="источники: overture/osm (карты), 2gis (демо-ключ), socrata/arcgis/ckan "
                          "(open-data), npi (healthcare), wikidata, foursquare "
                          "(deep/slow), localfile/url_csv (your own CSV/XLSX)")
     ap.add_argument("--limit", type=int, help="cap businesses collected")
@@ -93,7 +93,6 @@ def main(argv=None) -> int:
     # API keys are read from environment and never written to config files.
     import os
     override.setdefault("dgis_api_key", os.getenv("DGIS_API_KEY") or os.getenv("TWO_GIS_API_KEY"))
-    override.setdefault("yandex_api_key", os.getenv("YANDEX_MAPS_API_KEY"))
     if args.localfile:
         override["localfile_path"] = args.localfile
     if args.url_csv:
