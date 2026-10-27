@@ -17,7 +17,9 @@ Top-level table:
     enrich_cap       = 150            # int  — enrich only the top-N (cost control)
     out              = "austin_web"   # str  — output filename stem
 
-Valid `sources` values: overture, osm, socrata, npi, foursquare, arcgis.
+Valid `sources` values include overture, osm, socrata, npi, foursquare, arcgis,
+2gis and yandex. The Russian map API keys are normally supplied through
+DGIS_API_KEY / TWO_GIS_API_KEY and YANDEX_MAPS_API_KEY environment variables.
 
 Per-vertical overrides live in a ``[config]`` table (shallow-merged over the
 vertical's own ``config`` for the run):
@@ -26,6 +28,7 @@ vertical's own ``config`` for the run):
     socrata_datasets = ["https://data.austintexas.gov/resource/abcd-1234.json"]
     arcgis_layers    = ["https://services.arcgis.com/.../FeatureServer/0"]
     npi_taxonomies   = ["Dentist", "Family Medicine"]
+    dgis_queries     = ["магазин", "автосервис", "стоматология"]
 
     [config.weights]
     no_ssl   = 25

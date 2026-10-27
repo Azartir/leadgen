@@ -9,7 +9,8 @@ from ..audit import audit_website, audit_from_html, is_weak_url
 # Social platforms that count as "no real website of your own".
 SOCIAL_HOSTS = ("facebook.com", "fb.com", "instagram.com", "linktr.ee",
                 "linktree.com", "tiktok.com", "twitter.com", "x.com",
-                "nextdoor.com", "youtube.com")
+                "nextdoor.com", "youtube.com", "vk.com", "ok.ru",
+                "t.me", "telegram.me", "dzen.ru")
 
 # Broad OSM coverage for "any local business" verticals. Key-only entries
 # ("shop", "craft", "office") match ANY value of that key (every shop/trade/office

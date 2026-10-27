@@ -171,9 +171,22 @@ def merge_records(primary: dict, other: dict) -> dict:
     primary = primary if primary is not None else {}
     other = other or {}
 
+    conflicts = list(primary.get("source_conflicts") or [])
     for f in _FILL_FIELDS:
-        if _empty(primary.get(f)) and not _empty(other.get(f)):
-            primary[f] = other.get(f)
+        left, right = primary.get(f), other.get(f)
+        if not _empty(left) and not _empty(right):
+            norm_left = re.sub(r"\W+", "", str(left).casefold())
+            norm_right = re.sub(r"\W+", "", str(right).casefold())
+            if norm_left and norm_right and norm_left != norm_right:
+                label = {"phone": "телефон", "website": "сайт", "address": "адрес",
+                         "email": "email"}.get(f, f)
+                detail = f"{label}: {left} <> {right}"
+                if detail not in conflicts:
+                    conflicts.append(detail)
+        if _empty(left) and not _empty(right):
+            primary[f] = right
+    if conflicts:
+        primary["source_conflicts"] = conflicts
 
     # name: keep primary's, but adopt other's if primary somehow lacks one.
     if _empty(primary.get("name")) and not _empty(other.get("name")):

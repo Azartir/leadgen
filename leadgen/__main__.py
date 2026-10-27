@@ -31,8 +31,8 @@ def main(argv=None) -> int:
     ap.add_argument("--market", help="named market key or a geocodable place name")
     ap.add_argument("--sources", nargs="+", default=None,
                     choices=["overture", "osm", "socrata", "npi", "foursquare",
-                             "arcgis", "wikidata", "ckan", "localfile", "url_csv"],
-                    help="data sources: overture/osm (maps), socrata/arcgis/ckan "
+                             "arcgis", "2gis", "wikidata", "ckan", "localfile", "url_csv"],
+                    help="источники: overture/osm (карты), 2gis (демо-ключ), socrata/arcgis/ckan "
                          "(open-data), npi (healthcare), wikidata, foursquare "
                          "(deep/slow), localfile/url_csv (your own CSV/XLSX)")
     ap.add_argument("--limit", type=int, help="cap businesses collected")
@@ -90,6 +90,9 @@ def main(argv=None) -> int:
 
     # Per-vertical config (socrata_datasets / arcgis_layers / npi_taxonomies / ...).
     override = dict(file_cfg.get("config") or {})
+    # API keys are read from environment and never written to config files.
+    import os
+    override.setdefault("dgis_api_key", os.getenv("DGIS_API_KEY") or os.getenv("TWO_GIS_API_KEY"))
     if args.localfile:
         override["localfile_path"] = args.localfile
     if args.url_csv:

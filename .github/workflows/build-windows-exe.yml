@@ -1,0 +1,84 @@
+name: Сборка Windows EXE
+
+on:
+  push:
+    branches: [main, "feature/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    steps:
+      - name: Получить исходный код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            gui/requirements.txt
+
+      - name: Установить зависимости
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r gui/requirements.txt pytest pyinstaller
+
+      - name: Проверить движок и новые источники
+        shell: pwsh
+        run: |
+          pytest leadgen/tests -q
+          python gui/test_gui.py
+          python -m leadgen --list
+
+      - name: Собрать автономный EXE
+        shell: pwsh
+        run: |
+          pyinstaller --clean --noconfirm gui/LeadEngine.spec
+          if (!(Test-Path "dist/LeadEngine.exe")) { throw "EXE не создан" }
+          Copy-Item "dist/LeadEngine.exe" "LeadEngine-windows.exe"
+
+      - name: Проверить, что EXE запускается
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\LeadEngine-windows.exe" -PassThru
+          $ok = $false
+          try {
+            for ($i = 0; $i -lt 30; $i++) {
+              Start-Sleep -Seconds 1
+              foreach ($port in @(5000, 5001, 5050, 8000, 8080, 8765)) {
+                try {
+                  $r = Invoke-WebRequest -Uri "http://127.0.0.1:$port/" -TimeoutSec 2 -UseBasicParsing
+                  if ($r.StatusCode -eq 200) { $ok = $true; break }
+                } catch {}
+              }
+              if ($ok) { break }
+              if ($p.HasExited) { throw "EXE завершился с кодом $($p.ExitCode)" }
+            }
+          } finally {
+            if (!$p.HasExited) { Stop-Process -Id $p.Id -Force }
+          }
+          if (!$ok) { throw "EXE не поднял локальный интерфейс за 30 секунд" }
+
+      - name: Загрузить EXE как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: LeadEngine-windows
+          path: LeadEngine-windows.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Опубликовать EXE в GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: LeadEngine-windows.exe
+          fail_on_unmatched_files: true

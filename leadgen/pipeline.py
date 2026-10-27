@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from .geo import resolve_market
 from .sources import (overture_collect, osm_collect, socrata_collect,
                       npi_collect, foursquare_collect, arcgis_collect)
+from .ru_sources import dgis_collect, add_map_lookup_links
 from .suppression import norm, build_suppression_set
 from .export import write_outputs
 from .vertical import Vertical
@@ -141,6 +142,15 @@ def run_pipeline(vertical: Vertical, market: str, *,
                                         layers=cfg.get("arcgis_layers"))
             except Exception as e:
                 log(f"  ArcGIS failed: {e}")
+        if "2gis" in sources:
+            try:
+                leads += dgis_collect(
+                    bbox, limit=limit, log=log,
+                    queries=cfg.get("dgis_queries"),
+                    api_key=cfg.get("dgis_api_key"),
+                )
+            except Exception as e:
+                log(f"  2ГИС failed: {e}")
         # Extra no-key sources (lazy import so they're fully optional).
         if {"wikidata", "ckan", "localfile", "url_csv"} & set(sources):
             from .extra_sources import (wikidata_collect, ckan_collect,
@@ -177,6 +187,17 @@ def run_pipeline(vertical: Vertical, market: str, *,
             r["phone"] = normalize_phone(r["phone"]) or r["phone"]
     log(f"Collected {len(leads)} raw; deduping across sources…")
     leads = cross_source_dedupe(leads)
+    if getattr(vertical, "key", "") == "ru_b2b":
+        add_map_lookup_links(leads)
+    # Mark multi-source matches and preserve disagreements recorded by merge_records.
+    for rec in leads:
+        srcs = list(rec.get("sources") or [])
+        if rec.get("source") and rec["source"] not in srcs:
+            srcs.insert(0, rec["source"])
+        rec["verified_sources"] = ", ".join(srcs) if srcs else (rec.get("source") or "")
+        rec["source_match_count"] = len(srcs) if srcs else int(bool(rec.get("source")))
+        if isinstance(rec.get("source_conflicts"), list):
+            rec["source_conflicts"] = "; ".join(rec["source_conflicts"])
     log(f"  {len(leads)} after dedupe")
 
     # 1a. drop businesses already in the user's CRM (never hand back a dupe)
