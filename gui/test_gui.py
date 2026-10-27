@@ -9,6 +9,7 @@ Skips cleanly (exit 0) if Flask isn't installed.
 import os
 import sys
 import time
+from io import BytesIO
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -84,7 +85,13 @@ def main():
 
     d = client.get(f"/download/xlsx/{jid}")
     assert d.status_code == 200 and len(d.data) > 1000
-    print(f"PASS XLSX download ({len(d.data)} bytes)")
+    # Validate that the downloaded response is a real, readable XLSX archive.
+    import openpyxl
+    workbook = openpyxl.load_workbook(BytesIO(d.data), read_only=True, data_only=True)
+    sheet = workbook.active
+    assert sheet.max_row == 3 and sheet["C2"].value == "Coastal Cafe"
+    workbook.close()
+    print(f"PASS XLSX download and workbook validation ({len(d.data)} bytes)")
 
     # Demo mode — no network, no market required.
     r = client.post("/run", json={"vertical": "web_design", "demo": True})
