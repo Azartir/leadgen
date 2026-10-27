@@ -21,7 +21,6 @@ import requests
 from .audit import UA
 
 DGIS_ENDPOINT = "https://catalog.api.2gis.com/3.0/items"
-YANDEX_ENDPOINT = "https://search-maps.yandex.ru/v1/"
 
 
 def _float(value):
@@ -147,79 +146,21 @@ def dgis_collect(bbox, *, limit=None, log=print, queries=None, api_key=None):
     return out[:limit] if limit else out
 
 
-def yandex_collect(bbox, *, limit=None, log=print, queries=None, api_key=None, allow_processing=False):
-    """Optional Yandex Maps organization search; explicit license gate required.
+def add_map_lookup_links(leads):
+    """Add direct search links so a person can verify a company in map services.
 
-    Yandex's organization-search terms can prohibit saving or modifying response
-    data. This adapter is deliberately opt-in and only returns data when the
-    operator explicitly confirms that their license permits this processing.
+    Yandex Organization Search API terms prohibit storing/modifying returned
+    data under the standard license, so the lead export uses a search URL instead
+    of scraping and persisting Yandex results.
     """
-    key = api_key or os.getenv("YANDEX_MAPS_API_KEY")
-    if not key:
-        log("  Яндекс Карты: ключ не задан — пропускаю источник.")
-        return []
-    if not allow_processing and os.getenv("YANDEX_MAPS_ALLOW_PROCESSING") != "1":
-        log("  Яндекс Карты: поиск отключён. Проверьте лицензию; для разрешённой обработки задайте YANDEX_MAPS_ALLOW_PROCESSING=1.")
-        return []
-
-    south, west, north, east = bbox
-    center_lat, center_lon = _bbox_center(bbox)
-    queries = queries or ["организация", "магазин", "автосервис", "стоматология", "салон красоты"]
-    out, seen = [], set()
-    for query in queries:
-        if limit and len(out) >= limit:
-            break
-        try:
-            response = requests.get(
-                YANDEX_ENDPOINT,
-                params={
-                    "apikey": key, "text": query,
-                    "ll": f"{center_lon},{center_lat}", "spn": f"{east-west},{north-south}",
-                    "lang": "ru_RU", "type": "biz", "results": min(50, limit or 50),
-                },
-                headers={"User-Agent": UA}, timeout=25,
-            )
-            if response.status_code != 200:
-                log(f"  Яндекс Карты: HTTP {response.status_code}; проверьте ключ и лицензию.")
-                continue
-            features = response.json().get("features", []) or []
-        except (requests.RequestException, ValueError) as exc:
-            log(f"  Яндекс Карты: ошибка запроса: {type(exc).__name__}")
+    for rec in leads or []:
+        query = " ".join(str(rec.get(k) or "").strip() for k in ("name", "address", "city") if rec.get(k))
+        if not query:
             continue
-        for feature in features:
-            props = feature.get("properties", {}) or {}
-            meta = props.get("CompanyMetaData", {}) or {}
-            name = (meta.get("name") or props.get("name") or "").strip()
-            if not name:
-                continue
-            coords = ((feature.get("geometry") or {}).get("coordinates") or [None, None])
-            lon, lat = _float(coords[0]), _float(coords[1])
-            if not _in_bbox(lat, lon, bbox):
-                continue
-            address = meta.get("address") or ""
-            identity = (re.sub(r"\W+", "", name.casefold()), re.sub(r"\W+", "", address.casefold()))
-            if identity in seen:
-                continue
-            seen.add(identity)
-            phone = ""
-            phones = meta.get("Phones") or []
-            if phones and isinstance(phones[0], dict):
-                phone = phones[0].get("formatted") or phones[0].get("number") or ""
-            url = meta.get("url") or ""
-            out.append({
-                "name": name, "category": query, "website": url or None,
-                "phone": phone or None, "email": None, "address": address,
-                "city": "", "state": "", "zip": "", "brand": "",
-                "lat": lat, "lon": lon, "source": "yandex_maps",
-                "source_url": meta.get("href") or "",
-                "source_record_id": str(meta.get("id") or ""),
-            })
-            if limit and len(out) >= limit:
-                break
-        log(f"  Яндекс Карты («{query}»): найдено {len(features)}; добавлено {len(out)} всего")
-        time.sleep(0.2)
-    log(f"  Яндекс Карты: {len(out)} организаций")
-    return out[:limit] if limit else out
+        encoded = quote(query)
+        rec["yandex_maps_url"] = f"https://yandex.ru/maps/?text={encoded}"
+        rec["dgis_search_url"] = f"https://2gis.ru/search/{encoded}"
+    return leads
 
 
 def verify_records(leads, *, log=print):
