@@ -1,13 +1,9 @@
-"""Russian-market map APIs: 2GIS Places and opt-in Yandex organization search.
+"""Russian-market map lookup.
 
-Keys are read from environment variables, never committed:
-  DGIS_API_KEY / TWO_GIS_API_KEY
-  YANDEX_MAPS_API_KEY
-
-The Yandex adapter is disabled unless YANDEX_MAPS_ALLOW_PROCESSING=1 is set
-by an operator who has verified that their current license permits the intended
-processing. Do not export Yandex response fields under a license that forbids
-storing/modifying them.
+2GIS Places API can be used with a demo key or subscription. Yandex organization
+search is intentionally not used as a bulk source because its standard license
+prohibits saving/modifying response data; instead, exports contain direct links
+for manual verification in Yandex Maps and 2GIS.
 """
 from __future__ import annotations
 
