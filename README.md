@@ -224,3 +224,13 @@ Full guidance, per-source licenses, and attribution notes: [`docs/RESPONSIBLE_US
 
 MIT — see [`LICENSE`](LICENSE). Data you collect carries its source's license
 (Overture: CC-BY 4.0; OSM: ODbL); attribute accordingly if you publish derived work.
+
+
+## Russian-market prospecting
+
+A Russian-language B2B profile is available as `ru_b2b`, with Russian pitch drafts and city presets:
+
+    python -m leadgen --vertical ru_b2b --market stavropol_ru --sources osm --out stavropol_b2b
+    python -m leadgen --vertical ru_b2b --market "Ростов-на-Дону, Россия" --sources osm --out rostov_b2b
+
+See [`docs/RUSSIAN_PROSPECTING.md`](docs/RUSSIAN_PROSPECTING.md) for scope, scoring, limitations, and the recommended workflow. Current collection uses OSM/Overture; it does not scrape Yandex Maps or 2GIS and does not query Russian company registries.
