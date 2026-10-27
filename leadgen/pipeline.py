@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from .geo import resolve_market
 from .sources import (overture_collect, osm_collect, socrata_collect,
                       npi_collect, foursquare_collect, arcgis_collect)
-from .ru_sources import dgis_collect, yandex_collect
+from .ru_sources import dgis_collect, add_map_lookup_links
 from .suppression import norm, build_suppression_set
 from .export import write_outputs
 from .vertical import Vertical
@@ -151,16 +151,6 @@ def run_pipeline(vertical: Vertical, market: str, *,
                 )
             except Exception as e:
                 log(f"  2ГИС failed: {e}")
-        if "yandex" in sources:
-            try:
-                leads += yandex_collect(
-                    bbox, limit=limit, log=log,
-                    queries=cfg.get("yandex_queries"),
-                    api_key=cfg.get("yandex_api_key"),
-                    allow_processing=bool(cfg.get("yandex_allow_processing")),
-                )
-            except Exception as e:
-                log(f"  Яндекс Карты failed: {e}")
         # Extra no-key sources (lazy import so they're fully optional).
         if {"wikidata", "ckan", "localfile", "url_csv"} & set(sources):
             from .extra_sources import (wikidata_collect, ckan_collect,
@@ -197,6 +187,8 @@ def run_pipeline(vertical: Vertical, market: str, *,
             r["phone"] = normalize_phone(r["phone"]) or r["phone"]
     log(f"Collected {len(leads)} raw; deduping across sources…")
     leads = cross_source_dedupe(leads)
+    if getattr(vertical, "key", "") == "ru_b2b":
+        add_map_lookup_links(leads)
     # Mark multi-source matches and preserve disagreements recorded by merge_records.
     for rec in leads:
         srcs = list(rec.get("sources") or [])
