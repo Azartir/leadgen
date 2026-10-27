@@ -55,6 +55,10 @@ def main():
     leadgen.get_vertical("web_design").enrich_fn = _fake_enrich
 
     import app as gui
+    # Keep the test genuinely offline: /check normally probes external services.
+    gui.check_connectivity = lambda: {
+        "results": [], "summary": "Offline test", "can_overture": False, "can_osm": False
+    }
     client = gui.app.test_client()
 
     r = client.get("/")
