@@ -51,16 +51,12 @@ def test_dgis_normalizes_business_record(monkeypatch):
     assert records[0]["website"] == "https://example.ru"
 
 
-def test_yandex_requires_explicit_processing_permission(monkeypatch):
-    monkeypatch.setenv("YANDEX_MAPS_API_KEY", "test-key")
-    monkeypatch.delenv("YANDEX_MAPS_ALLOW_PROCESSING", raising=False)
-    calls = []
-    monkeypatch.setattr(ru_sources.requests, "get", lambda *a, **k: calls.append(1))
-    records = ru_sources.yandex_collect(
-        (44.9, 41.8, 45.1, 42.2), log=lambda _: None
-    )
-    assert records == []
-    assert calls == []
+def test_map_lookup_links_are_generated_without_api_calls():
+    leads = [{"name": "Тестовая компания", "address": "Ставрополь, улица Ленина, 1"}]
+    result = ru_sources.add_map_lookup_links(leads)
+    assert result[0]["yandex_maps_url"].startswith("https://yandex.ru/maps/?text=")
+    assert result[0]["dgis_search_url"].startswith("https://2gis.ru/search/")
+    assert "%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%B0%D1%8F" in result[0]["yandex_maps_url"]
 
 
 def test_cross_source_merge_preserves_conflicts():
