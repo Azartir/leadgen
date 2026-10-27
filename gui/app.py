@@ -55,7 +55,11 @@ def run_job(job_id: str, params: dict):
         limit = params.get("limit") or None
         enrich_cap = params.get("enrich_cap") or 150
 
-        override = {}
+        override = {
+            "dgis_api_key": (params.get("dgis_api_key") or "").strip(),
+            "yandex_api_key": (params.get("yandex_api_key") or "").strip(),
+            "yandex_allow_processing": bool(params.get("yandex_allow_processing")),
+        }
         comp = vertical.competitor_input
         urls = [u.strip() for u in (params.get("competitor_urls") or "").splitlines()
                 if u.strip()]
@@ -392,9 +396,16 @@ details.settings>summary{cursor:pointer;font-weight:600;color:var(--accent);font
           <label><input type="checkbox" id="src_osm"> Live map data</label>
           <label><input type="checkbox" id="src_socrata"> New-business records (open data)</label>
           <label><input type="checkbox" id="src_npi"> Healthcare providers (NPI)</label>
-          <label><input type="checkbox" id="src_foursquare"> Foursquare (deep · slow ~1–2 min)</label>
+          <label><input type="checkbox" id="src_foursquare"> Foursquare (глубокий поиск · медленно)</label>
+          <label><input type="checkbox" id="src_2gis"> 2ГИС (API, нужен демо-ключ)</label>
+          <label><input type="checkbox" id="src_yandex"> Яндекс Карты (API, лицензия)</label>
         </div>
-        <div class="hint">Leave these as-is unless a search comes back empty — then try ticking another box. “New-business records” = just-licensed businesses (coverage varies by city); “Healthcare providers” = dentists/doctors/clinics; “Foursquare” is a deep scan that takes 1–2 minutes.</div>
+        <div class="row" style="margin-top:8px">
+          <div><label class="fld" for="dgis_api_key">Ключ API 2ГИС</label><input type="password" id="dgis_api_key" autocomplete="off" placeholder="Вставьте демо-ключ 2ГИС"></div>
+          <div><label class="fld" for="yandex_api_key">Ключ API Яндекс Карт</label><input type="password" id="yandex_api_key" autocomplete="off" placeholder="Ключ API поиска организаций"></div>
+        </div>
+        <label style="display:block;margin-top:8px;font-size:12px"><input type="checkbox" id="yandex_allow_processing"> Подтверждаю, что моя лицензия Яндекса разрешает обработку результатов этим приложением</label>
+        <div class="hint">Ключи передаются только локальному приложению на время запуска и не сохраняются в настройках браузера. Демо-ключ 2ГИС ограничен по времени и запросам. Не включайте Яндекс без проверки условий вашей лицензии.</div>
       </div>
     </div>
   </fieldset>
@@ -554,9 +565,15 @@ function baseBody(){
   if(document.getElementById("src_socrata").checked) sources.push("socrata");
   if(document.getElementById("src_npi").checked) sources.push("npi");
   if(document.getElementById("src_foursquare").checked) sources.push("foursquare");
+  if(document.getElementById("src_2gis").checked) sources.push("2gis");
+  if(document.getElementById("src_yandex").checked) sources.push("yandex");
   return {
     vertical:vsel.value, market:document.getElementById("market").value,
-    sources, enrich:document.getElementById("enrich").checked,
+    sources,
+    dgis_api_key:document.getElementById("dgis_api_key").value,
+    yandex_api_key:document.getElementById("yandex_api_key").value,
+    yandex_allow_processing:document.getElementById("yandex_allow_processing").checked,
+    enrich:document.getElementById("enrich").checked,
     enrich_cap:+document.getElementById("enrich_cap").value||0,
     limit:+document.getElementById("limit").value||0,
     competitor_urls:document.getElementById("competitor_urls").value,
@@ -844,7 +861,7 @@ function applySettings(s){
   if(Array.isArray(s.sources)){
     document.querySelectorAll("#set_sources input").forEach(cb=>cb.checked=s.sources.includes(cb.dataset.src));
     // Mirror onto the run form's source checkboxes.
-    const map={overture:"src_overture",osm:"src_osm",socrata:"src_socrata",npi:"src_npi",foursquare:"src_foursquare"};
+    const map={overture:"src_overture",osm:"src_osm",socrata:"src_socrata",npi:"src_npi",foursquare:"src_foursquare","2gis":"src_2gis",yandex:"src_yandex"};
     Object.entries(map).forEach(([src,id])=>{ const el=document.getElementById(id); if(el) el.checked=s.sources.includes(src); });
   }
   if(s.enrich_cap!=null && s.enrich_cap!==""){
@@ -1010,6 +1027,64 @@ function maybeStartTour(){
 }
 
 loadSavedMarkets(); loadRecent(); maybeStartTour();
+
+// Русская локализация интерфейса без изменения логики приложения.
+(function localizeInterface(){
+  const dict = {
+    "Lead Engine":"Лидогенератор", "Toggle dark mode":"Переключить тему",
+    "🌙 Dark":"🌙 Тёмная", "☀️ Light":"☀️ Светлая",
+    "Find scored local-business leads from free public data — no accounts, no API keys.":"Поиск и оценка локальных компаний по открытым данным.",
+    "First time?":"Впервые здесь?", "Click":"Нажмите", "Try a sample":"Демо-пример",
+    "Settings & defaults":"Настройки", "Default data sources":"Источники по умолчанию",
+    "Nationwide business directory":"Каталог компаний Overture", "Live map data":"OpenStreetMap",
+    "New-business records (open data)":"Реестры открытых данных", "Healthcare providers (NPI)":"Медицинские организации США (NPI)",
+    "Save defaults":"Сохранить настройки", "Reset":"Сбросить",
+    "Recent runs":"Последние запуски", "1 · What kind of leads?":"1 · Какие компании искать?",
+    "Type of business to find":"Тип компаний", "2 · Where should we look?":"2 · Где искать?",
+    "Area":"Регион или город", "Where the data comes from":"Источники данных",
+    "3 · Skip anyone already using a competitor":"3 · Исключить клиентов конкурентов",
+    "4 · Skip people already in your CRM":"4 · Исключить компании из CRM",
+    "Upload your current contact list (.csv)":"Загрузить текущую базу контактов (.csv)",
+    "Advanced options":"Дополнительные параметры", "Visit each website for deeper detail":"Проверять сайты компаний",
+    "Deep-check at most this many":"Максимум проверок сайтов", "Stop after this many found":"Остановиться после указанного числа компаний",
+    "🔍 Find leads":"🔍 Найти компании", "▶ Try a sample (no internet needed)":"▶ Демо-пример (без интернета)",
+    "📡 Check my connection":"📡 Проверить подключение", "➕ Add to queue":"➕ В очередь",
+    "📋 Run queue":"📋 Очередь запусков", "▶ Run queue":"▶ Запустить очередь",
+    "Clear queue":"Очистить очередь", "Show activity log":"Показать журнал",
+    "leads found":"компаний найдено", "🟢 Call first":"🟢 Высокий приоритет",
+    "🟡 Worth a call":"🟡 Средний приоритет", "🔴 Lower priority":"🔴 Низкий приоритет",
+    "Filter these results… (name, city, why a lead, pitch)":"Фильтр результатов: название, город, причина",
+    "☰ Columns":"☰ Столбцы", "⬇ Export filtered view (.csv)":"⬇ Экспорт выбранных строк (.csv)",
+    "Skip tour":"Пропустить обзор", "Next →":"Далее →",
+    "Working…":"Выполняется…", "Starting…":"Запуск…", "Testing each data source…":"Проверяю источники данных…",
+    "Could not run the check.":"Не удалось проверить подключение.",
+    "Download spreadsheet (Excel)":"Скачать таблицу Excel", "Download for CRM (.csv)":"Скачать CSV для CRM",
+    "How to read this:":"Как читать результаты:", "Call first":"Высокий приоритет",
+    "Worth a call":"Средний приоритет", "Lower priority":"Низкий приоритет",
+    "Columns":"Столбцы", "Status":"Статус", "Loaded":"Загружено",
+    "Saved ✓":"Сохранено ✓", "Run queue":"Запустить очередь", "queued":"в очереди",
+    "running…":"выполняется…", "done ✓":"готово ✓", "failed":"ошибка"
+  };
+  const translate = value => {
+    const key = (value || "").trim();
+    return dict[key] || value;
+  };
+  const walk = root => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n => { const v=translate(n.nodeValue); if(v!==n.nodeValue) n.nodeValue=v; });
+    root.querySelectorAll("[placeholder],[title],[aria-label]").forEach(el=>{
+      ["placeholder","title","aria-label"].forEach(a=>{
+        if(el.hasAttribute(a)){ const v=translate(el.getAttribute(a)); if(v!==el.getAttribute(a)) el.setAttribute(a,v); }
+      });
+    });
+  };
+  walk(document.body);
+  new MutationObserver(records => records.forEach(r => {
+    r.addedNodes.forEach(n => { if(n.nodeType===Node.TEXT_NODE){ const v=translate(n.nodeValue); if(v!==n.nodeValue)n.nodeValue=v; }
+      else if(n.nodeType===Node.ELEMENT_NODE && !["SCRIPT","STYLE"].includes(n.tagName)) walk(n); });
+  })).observe(document.body,{childList:true,subtree:true});
+})(); 
 </script>
 </body></html>"""
 
