@@ -61,3 +61,14 @@ def test_yandex_requires_explicit_processing_permission(monkeypatch):
     )
     assert records == []
     assert calls == []
+
+
+def test_cross_source_merge_preserves_conflicts():
+    from leadgen.quality import merge_records
+
+    primary = {"name": "Компания", "phone": "+7 900 111-11-11", "source": "osm"}
+    other = {"name": "Компания", "phone": "+7 900 222-22-22", "source": "2gis"}
+    merged = merge_records(primary, other)
+    assert merged["phone"] == "+7 900 111-11-11"
+    assert merged["sources"] == ["osm", "2gis"]
+    assert any("телефон" in item for item in merged["source_conflicts"])
