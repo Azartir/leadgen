@@ -204,6 +204,8 @@ def run_pipeline(vertical: Vertical, market: str, *,
             srcs.insert(0, rec["source"])
         rec["verified_sources"] = ", ".join(srcs) if srcs else (rec.get("source") or "")
         rec["source_match_count"] = len(srcs) if srcs else int(bool(rec.get("source")))
+        if isinstance(rec.get("source_conflicts"), list):
+            rec["source_conflicts"] = "; ".join(rec["source_conflicts"])
     log(f"  {len(leads)} after dedupe")
 
     # 1a. drop businesses already in the user's CRM (never hand back a dupe)
