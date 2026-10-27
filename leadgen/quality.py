@@ -175,8 +175,8 @@ def merge_records(primary: dict, other: dict) -> dict:
     for f in _FILL_FIELDS:
         left, right = primary.get(f), other.get(f)
         if not _empty(left) and not _empty(right):
-            norm_left = re.sub(r"\\W+", "", str(left).casefold())
-            norm_right = re.sub(r"\\W+", "", str(right).casefold())
+            norm_left = re.sub(r"\W+", "", str(left).casefold())
+            norm_right = re.sub(r"\W+", "", str(right).casefold())
             if norm_left and norm_right and norm_left != norm_right:
                 label = {"phone": "телефон", "website": "сайт", "address": "адрес",
                          "email": "email"}.get(f, f)
