@@ -57,8 +57,6 @@ def run_job(job_id: str, params: dict):
 
         override = {
             "dgis_api_key": (params.get("dgis_api_key") or "").strip(),
-            "yandex_api_key": (params.get("yandex_api_key") or "").strip(),
-            "yandex_allow_processing": bool(params.get("yandex_allow_processing")),
         }
         comp = vertical.competitor_input
         urls = [u.strip() for u in (params.get("competitor_urls") or "").splitlines()
@@ -398,14 +396,12 @@ details.settings>summary{cursor:pointer;font-weight:600;color:var(--accent);font
           <label><input type="checkbox" id="src_npi"> Healthcare providers (NPI)</label>
           <label><input type="checkbox" id="src_foursquare"> Foursquare (глубокий поиск · медленно)</label>
           <label><input type="checkbox" id="src_2gis"> 2ГИС (API, нужен демо-ключ)</label>
-          <label><input type="checkbox" id="src_yandex"> Яндекс Карты (API, лицензия)</label>
         </div>
-        <div class="row" style="margin-top:8px">
-          <div><label class="fld" for="dgis_api_key">Ключ API 2ГИС</label><input type="password" id="dgis_api_key" autocomplete="off" placeholder="Вставьте демо-ключ 2ГИС"></div>
-          <div><label class="fld" for="yandex_api_key">Ключ API Яндекс Карт</label><input type="password" id="yandex_api_key" autocomplete="off" placeholder="Ключ API поиска организаций"></div>
+        <div style="margin-top:8px">
+          <label class="fld" for="dgis_api_key">Ключ API 2ГИС</label>
+          <input type="password" id="dgis_api_key" autocomplete="off" placeholder="Вставьте демо-ключ 2ГИС">
         </div>
-        <label style="display:block;margin-top:8px;font-size:12px"><input type="checkbox" id="yandex_allow_processing"> Подтверждаю, что моя лицензия Яндекса разрешает обработку результатов этим приложением</label>
-        <div class="hint">Ключи передаются только локальному приложению на время запуска и не сохраняются в настройках браузера. Демо-ключ 2ГИС ограничен по времени и запросам. Не включайте Яндекс без проверки условий вашей лицензии.</div>
+        <div class="hint">Ключ передаётся локальному приложению только на время запуска и не сохраняется в настройках браузера. Демо-ключ 2ГИС ограничен по времени и запросам. Для ручной сверки в Яндекс Картах и 2ГИС в результатах будут ссылки поиска по названию и адресу.</div>
       </div>
     </div>
   </fieldset>
@@ -566,13 +562,10 @@ function baseBody(){
   if(document.getElementById("src_npi").checked) sources.push("npi");
   if(document.getElementById("src_foursquare").checked) sources.push("foursquare");
   if(document.getElementById("src_2gis").checked) sources.push("2gis");
-  if(document.getElementById("src_yandex").checked) sources.push("yandex");
   return {
     vertical:vsel.value, market:document.getElementById("market").value,
     sources,
     dgis_api_key:document.getElementById("dgis_api_key").value,
-    yandex_api_key:document.getElementById("yandex_api_key").value,
-    yandex_allow_processing:document.getElementById("yandex_allow_processing").checked,
     enrich:document.getElementById("enrich").checked,
     enrich_cap:+document.getElementById("enrich_cap").value||0,
     limit:+document.getElementById("limit").value||0,
@@ -861,7 +854,7 @@ function applySettings(s){
   if(Array.isArray(s.sources)){
     document.querySelectorAll("#set_sources input").forEach(cb=>cb.checked=s.sources.includes(cb.dataset.src));
     // Mirror onto the run form's source checkboxes.
-    const map={overture:"src_overture",osm:"src_osm",socrata:"src_socrata",npi:"src_npi",foursquare:"src_foursquare","2gis":"src_2gis",yandex:"src_yandex"};
+    const map={overture:"src_overture",osm:"src_osm",socrata:"src_socrata",npi:"src_npi",foursquare:"src_foursquare","2gis":"src_2gis"};
     Object.entries(map).forEach(([src,id])=>{ const el=document.getElementById(id); if(el) el.checked=s.sources.includes(src); });
   }
   if(s.enrich_cap!=null && s.enrich_cap!==""){
